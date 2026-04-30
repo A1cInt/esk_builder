@@ -57,7 +57,7 @@ case "$BUILD_TARGET" in
         RELEASE_REPO="ESK-Project/esk-releases"
         ;;
     generic)
-        KERNEL_REPO="github.com:ESK-Project/android12-5.10-gki@${BRANCH_OVERRIDE:-rebase}"
+        KERNEL_REPO="github.com:ESK-Project/android12-5.10-gki@${BRANCH_OVERRIDE:-main}"
         AK3_REPO="github.com:ESK-Project/AnyKernel3@generic"
         RELEASE_REPO="ESK-Project/gki-releases"
         ;;
