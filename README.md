@@ -170,6 +170,7 @@ just clean
 notes:
 
 - boolean values accept `true/false`, `t/f`, `yes/no`, `y/n`, `on/off`, and `1/0`
+- only `STOCK_CONFIG` accepts `auto`; other boolean-like inputs fail clearly
 - `STOCK_CONFIG=auto` resolves to `false` for xaga and `true` for generic
 - `SUSFS` needs `KSU=true`
 - `LXC` only works with `BUILD_TARGET=xaga`
@@ -189,5 +190,4 @@ notes:
 | build.log                     | build log                               |
 
 where `<package>` has the format `${KERNEL_NAME}-${KERNEL_VERSION}-${VARIANT}` (with `-${KERNEL_COMMIT}` appended when `IS_RELEASE` is not `true`).
-
 

@@ -78,7 +78,7 @@ init_build() {
     KSU="$(resolve_bool "${KSU-}" "$KSU_DEFAULT")"
     SUSFS="$(resolve_bool "${SUSFS-}" "$SUSFS_DEFAULT")"
     LXC="$(resolve_bool "${LXC-}" "$LXC_DEFAULT")"
-    STOCK_CONFIG="$(resolve_bool "${STOCK_CONFIG-}" "$STOCK_CONFIG_DEFAULT")"
+    STOCK_CONFIG="$(resolve_bool "${STOCK_CONFIG-}" "$STOCK_CONFIG_DEFAULT" true)"
 
     TG_NOTIFY="$(resolve_bool "${TG_NOTIFY-}" "$TG_NOTIFY_DEFAULT")"
     RESET_SOURCES="$(resolve_bool "${RESET_SOURCES-}" "$RESET_SOURCES_DEFAULT")"

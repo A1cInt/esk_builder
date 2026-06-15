@@ -50,9 +50,17 @@ PY
 resolve_bool() {
     local value="${1-}"
     local default_value="${2-}"
+    local allow_auto="${3:-false}"
 
     case "${value,,}" in
-        "" | auto) echo "${default_value:-false}" ;;
+        "") echo "${default_value:-false}" ;;
+        auto)
+            if is_true "$allow_auto"; then
+                echo "${default_value:-false}"
+            else
+                fatal "Invalid boolean value: $value (only STOCK_CONFIG may use auto)"
+            fi
+            ;;
         1 | y | yes | t | true | on) echo "true" ;;
         0 | n | no | f | false | off) echo "false" ;;
         *)
