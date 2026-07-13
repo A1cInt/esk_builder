@@ -1,196 +1,214 @@
 # esk builder
 
-builds kernel packages for the branch-configured device and generic GKI.
+esk builder builds Linux kernel packages for two targets:
 
-pulls sources and tools, applies optional patches, then builds and packages the kernel.
+- `device` builds the phone kernel configured by the current builder branch.
+- `generic` builds the generic Android Generic Kernel Image (GKI) target.
 
-## quick start
+The build downloads the selected kernel source and required tools, applies the enabled patches, compiles the kernel, and writes packages to `out/`.
 
-install the system packages, set up the python helper env, then run a build:
+AnyKernel3 is the flashable zip layout used to package the compiled kernel for both targets.
 
-```bash
-uv python install 3.14
-uv sync --project py --locked
-just build
-```
+## choose a target
 
-for a target-specific build:
+| target | use it for | configuration | main output |
+| ------ | ---------- | ------------- | ----------- |
+| `device` | The device supported by the current builder branch | The branch-specific device block in `config.sh` | An AnyKernel3 zip with the device modules |
+| `generic` | The separate generic GKI build | The `generic` case in `config.sh` | An AnyKernel3 zip and raw, gzip, and LZ4 boot images |
 
-```bash
-just device
-just generic
-```
+`device` is the build target name. The native device codename is the value of `DEVICE_NAME` in `config.sh`; it identifies the configured device but is not a valid build target. Use `device` or `generic` in commands, never the codename.
 
-`device` builds the phone kernel configured for this branch. On `plato`, it builds for plato.
+The checked-out builder branch controls the device identity, kernel and AnyKernel3 repositories, source branch, defconfig (kernel build configuration) overlay, release repository, and supported device features. Check the first block of `config.sh` before a device build instead of relying on values copied from another branch.
 
-## structure
-
-- build.sh: main entry point
-- config.sh: defaults, repos, paths, and target settings
-- build/: setup, source fetching, patching, and kernel compile steps
-- ci/: packaging, metadata, modules, and telegram helpers
-- py/: uv-managed python helper cli
-- modules/: branch-owned `modules.load` files for device packaging
-- kernel_patches/: optional kernel patches
-- .github/workflows/: ci and release workflows
-
-## build flow
-
-```text
-just build / just device / just generic
-        |
-        v
-build.sh
-        |
-        v
-config.sh loads defaults, target settings, paths, and repos
-        |
-        v
-build/ prepares tools, sources, patches, and kernel build
-        |
-        v
-ci/ packages images, modules, metadata, and release files
-        |
-        v
-out/ contains flashable zips and boot images
-```
-
-`build.log` and `github.json` are written at the repo root.
+`just build` uses the default target, which is `device`. Use `just generic` only when you want the separate generic GKI build.
 
 ## requirements
 
-ubuntu/debian:
+This is a Linux-only Bash and Python project. Clone or check out the builder branch for the device you want, then run every command below from the repository root.
+
+The first build needs network access. It downloads the kernel source, AnyKernel3, Android build tools, `mkbootimg`, an AOSP Clang toolchain, and `libfakestat`. A generic build also downloads a certified GKI archive for its boot image template.
+
+Ubuntu 24.04 or newer and Debian 13 or newer:
 
 ```bash
-sudo apt install aria2 bc bison build-essential ccache curl flex git jq libfaketime lz4 python3 shellcheck shfmt tar upx uv wget zip zstd just
+sudo apt update
+sudo apt install \
+  aria2 bc bison bsdextrautils build-essential ccache curl flex git gzip just \
+  kmod libfaketime llvm lz4 patch python3 shellcheck shfmt tar unzip xz-utils \
+  zip zstd
 ```
 
-fedora:
+Fedora:
 
 ```bash
-sudo dnf install aria2 bc bison ccache curl flex git jq libfaketime lz4 make python3 ShellCheck shfmt tar upx uv wget zip zstd just
+sudo dnf install \
+  aria2 bc bison ccache curl flex gcc git gzip just kmod libfaketime llvm lz4 \
+  make patch python3 ShellCheck shfmt tar unzip util-linux xz zip zstd
 ```
 
-## uv setup
-
-the python helpers live in `py/` and use python 3.14.
-
-for local checks and development:
+Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/) if it is not already available:
 
 ```bash
-uv python install 3.14
-uv sync --project py --locked
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-for runtime or release use without dev tools:
+Restart the shell if the installer asks you to update `PATH`, then verify the two project commands:
+
+```bash
+just --version
+uv --version
+```
+
+## quick start
+
+Set up the Python 3.14 helper environment and run the default device build:
 
 ```bash
 uv python install 3.14
 uv sync --project py --locked --no-dev
+just build
 ```
 
-`uv sync --project py --locked` installs the helper env with dev dependencies like ruff and basedpyright.
+The first two commands create `py/.venv` with the runtime dependencies used by the Bash build. `just build` then runs `build.sh` with the branch-configured `device` target. Build packages appear in `out/`; `build.log` and `github.json` appear at the repository root.
 
-`uv sync --project py --locked --no-dev` keeps only the runtime dependencies used by the build and release helpers.
+To build the generic target instead:
 
-## build
+```bash
+just generic
+```
 
-list available commands:
+> [!WARNING]
+> Treat `kernel/`, `anykernel3/`, `build-tools/`, `mkbootimg/`, and `susfs/` as build-managed checkouts. A build cleans and resets existing source repositories, and it recreates `anykernel3/`, `out/`, and `boot_image/`. Do not keep source changes or untracked files in those directories. `RESET_SOURCES=true` deletes and reclones the managed source directories before continuing.
+
+## build commands
+
+List the available commands:
 
 ```bash
 just --list
 ```
 
-build with the default target:
+Build the current `BUILD_TARGET`, which defaults to `device`:
 
 ```bash
 just build
 ```
 
-build the configured device:
+Build the branch-configured device explicitly:
 
 ```bash
 just device
 ```
 
-build generic:
+Build generic GKI:
 
 ```bash
 just generic
 ```
 
-example:
+Pass build settings after the recipe name:
 
 ```bash
 just device KSU=true SUSFS=true LXC=false
 ```
 
-## checks
+The recipes pass these values to `build.sh` as environment variables.
 
-format shell scripts:
+## configuration
+
+The default settings live in `config.sh`. Override the supported settings for one command as shown above, or export them before running `just build`.
+
+| variable | purpose | accepted values | default |
+| -------- | ------- | --------------- | ------- |
+| `BUILD_TARGET` | Select the build target | `device`, `generic` | `device` |
+| `KSU` | Add KernelSU | Boolean | `false` |
+| `SUSFS` | Add SuSFS to a KernelSU build | Boolean | `false` |
+| `LXC` | Apply the Linux Containers (LXC) patch | Boolean | `false` |
+| `STOCK_CONFIG` | Apply the stock configuration patch | `auto`, `true`, `false` | `auto`: device resolves to `false`, generic resolves to `true` |
+| `BRANCH_OVERRIDE` | Override the selected target's kernel source branch | Branch name | Device value from `config.sh`; generic uses `main` |
+| `JOBS` | Set parallel `make` jobs | Integer | `nproc --all` |
+| `CCACHE_SIZE` | Set the compiler cache size | A `ccache` size such as `2G` | `2G` |
+| `RESET_SOURCES` | Delete and reclone managed source directories before the build | Boolean | `false` locally, `true` in GitHub Actions |
+| `TG_NOTIFY` | Send Telegram build messages and packages | Boolean | `false` locally; `true` when unset in GitHub Actions |
+| `IS_RELEASE` | Use release package naming without the kernel commit suffix | Boolean | `false` |
+| `GH_TOKEN` | Authenticate GitHub API requests for release assets | Token string | Unset |
+| `TG_BOT_TOKEN` | Authenticate the Telegram bot | Token string | Unset |
+| `TG_CHAT_ID` | Select the Telegram destination | Chat ID | Unset |
+
+Boolean values accept `true/false`, `t/f`, `yes/no`, `y/n`, `on/off`, and `1/0`. Only `STOCK_CONFIG` accepts `auto`. Invalid values stop the build with an error.
+
+Feature rules:
+
+- `KSU=true` runs the KernelSU setup script from `ESK-Project/ReSukiSU@main`.
+- `SUSFS=true` requires `KSU=true` and applies the configured SuSFS patches.
+- `LXC=true` is valid only for `device`, and only when that branch sets `DEVICE_LXC_SUPPORTED=true` in `config.sh`.
+- `STOCK_CONFIG=auto` follows the target defaults shown in the table.
+- `BRANCH_OVERRIDE` changes only the selected kernel source branch. It does not switch the builder branch or change `DEVICE_NAME`.
+- `TG_NOTIFY=true` requires both `TG_BOT_TOKEN` and `TG_CHAT_ID`.
+- The release workflow passes `TG_NOTIFY=false`; other GitHub Actions builds use their workflow input.
+- `GH_TOKEN` is optional for local builds. Without it, GitHub API requests can be rate-limited. GitHub Actions requires the token when the needed release assets are not already cached.
+
+Common configuration errors are reported before compilation. If a build rejects a codename as an unknown target, use `device`. If it rejects SuSFS, enable KernelSU too. If it rejects LXC, select a branch whose device configuration supports LXC or disable it.
+
+## output
+
+Each build clears `out/` before packaging. `<package>` has the form `${KERNEL_NAME}-${KERNEL_VERSION}-${VARIANT}`. Local builds append `-${KERNEL_COMMIT}`; release builds do not.
+
+`VNL` means KernelSU is disabled. `KSU` means it is enabled. Enabled SuSFS and LXC features add `-SUSFS` and `-LXC` to the variant.
+
+| path | target | description |
+| ---- | ------ | ----------- |
+| `out/<package>-AnyKernel3.zip` | Both | Flashable AnyKernel3 package containing the compiled kernel |
+| `out/module.tar.xz` | Device | Staged `vendor_boot` and `vendor_dlkm` modules, also copied into the AnyKernel3 package |
+| `out/<package>-boot-raw.img` | Generic | Boot image containing the raw kernel image |
+| `out/<package>-boot-gz.img` | Generic | Boot image containing the gzip-compressed kernel image |
+| `out/<package>-boot-lz4.img` | Generic | Boot image containing the LZ4-compressed kernel image |
+| `github.json` | Both | Release metadata, including the kernel commit, toolchain, package name, output directory, and release repository |
+| `build.log` | Both | Build log |
+| `work/` | Both | Kernel compilation output used to create the packages |
+
+## checks and cleanup
+
+For local development, install the Python development dependencies instead of the runtime-only environment:
 
 ```bash
-just fmt
+uv sync --project py --locked
 ```
 
-run all checks:
+Check formatting without changing files:
+
+```bash
+just fmt-check
+```
+
+Run all shell formatting, shell syntax, ShellCheck, Ruff, and Python type checks:
 
 ```bash
 just check
 ```
 
-run the python type check:
+`just --list` also shows the individual `bash-check`, `lint`, `py-lint`, and `py-check` recipes.
+
+Format tracked shell scripts in place:
 
 ```bash
-just py-check
+just fmt
 ```
 
-clean generated outputs:
+Remove `out/`, `work/`, `staged/`, `boot_image/`, `build.log`, and `github.json`. This does not remove downloaded source or tool directories:
 
 ```bash
 just clean
 ```
 
-## inputs
+## structure
 
-| env var         | purpose                                      | accepted values                  | default                           |
-| --------------- | -------------------------------------------- | -------------------------------- | --------------------------------- |
-| BUILD_TARGET    | select the build target                      | `device`, `generic`              | `device`                          |
-| KSU             | enable KernelSU setup and config             | boolean                          | `false`                           |
-| SUSFS           | apply SuSFS patches and config               | boolean                          | `false`                           |
-| LXC             | apply the LXC patch                          | boolean                          | `false`                           |
-| STOCK_CONFIG    | apply the stock config patch                 | `auto`, `true`, `false`          | `device: false`, `generic: true`  |
-| BRANCH_OVERRIDE | override the target kernel branch            | branch name                      | device: `config.sh`, generic: `main` |
-| JOBS            | set the make job count                       | integer                          | `nproc --all`                     |
-| RESET_SOURCES   | reset and re-clone source/tool dirs before build | boolean                      | `false` locally, `true` in ci     |
-| TG_NOTIFY       | send telegram updates                        | boolean                          | `false` locally, `true` in ci     |
-| IS_RELEASE      | flag the build as a release build            | boolean                          | `false`                           |
-| GH_TOKEN        | github token for release asset fetching      | token string                     | unset                             |
-| TG_BOT_TOKEN    | telegram bot token                           | token string                     | unset                             |
-| TG_CHAT_ID      | telegram chat id                             | chat id                          | unset                             |
-
-notes:
-
-- boolean values accept `true/false`, `t/f`, `yes/no`, `y/n`, `on/off`, and `1/0`
-- only `STOCK_CONFIG` accepts `auto`; other boolean-like inputs fail clearly
-- `STOCK_CONFIG=auto` resolves to `false` for device and `true` for generic
-- `SUSFS` needs `KSU=true`
-- `LXC` only works when enabled by the branch's device configuration
-- `TG_NOTIFY=true` needs `TG_BOT_TOKEN` and `TG_CHAT_ID`
-- `GH_TOKEN` is optional, but helps when fetching latest release assets
-
-the device name, kernel identity, repositories, defconfig overlay, and LXC capability are defined together in the branch-specific device block in `config.sh`.
-
-## output
-
-| file                          | description                             |
-| ----------------------------- | --------------------------------------- |
-| work/                         | kernel build output directory           |
-| out/\<package>-AnyKernel3.zip | flashable AnyKernel3 package            |
-| out/\<package>-boot-raw.img   | generic raw boot image                  |
-| out/\<package>-boot-gz.img    | generic gzip boot image                 |
-| out/\<package>-boot-lz4.img   | generic lz4 boot image                  |
-| github.json                   | release metadata written by the python helper, including the kernel commit |
-| build.log                     | build log                               |
-
-where `<package>` has the format `${KERNEL_NAME}-${KERNEL_VERSION}-${VARIANT}` (with `-${KERNEL_COMMIT}` appended when `IS_RELEASE` is not `true`).
+- `build.sh`: top-level build flow and validation
+- `config.sh`: branch-owned device settings, generic target settings, defaults, repositories, and paths
+- `build/`: source setup, patching, toolchain setup, and kernel compilation
+- `ci/`: module handling, packaging, metadata, and Telegram notifications
+- `py/`: uv-managed Python 3.14 helper CLI for API and JSON work
+- `modules/`: branch-owned `modules.load` files used by device packaging
+- `kernel_patches/`: optional stock configuration and LXC patches
+- `.github/matrix/`: release feature combinations for each target
+- `.github/workflows/`: checks, manual builds, and release workflows
