@@ -34,11 +34,11 @@ on:
     inputs:
       BUILD_TARGET:
         description: "Build target"
-        default: xaga
+        default: plato
         type: choice
         options:
-          - xaga
           - generic
+          - plato
 
       BRANCH_OVERRIDE:
         description: "Kernel branch overriding"

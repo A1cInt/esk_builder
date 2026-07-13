@@ -82,7 +82,7 @@ validate_deps() {
             require_cmds patch
             ;;
         modules)
-            # before xaga module packaging
+            # before plato module packaging
             require_cmds depmod llvm-strip xz
             ;;
         bootimg)
@@ -107,7 +107,7 @@ main() {
     count setup_toolchain
     count prepare_build
     count build_kernel
-    if [[ "$BUILD_TARGET" == "xaga" ]]; then
+    if [[ "$BUILD_TARGET" == "plato" ]]; then
         count build_module
     fi
 
