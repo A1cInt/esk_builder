@@ -66,6 +66,10 @@ is_true() {
     [[ $1 == true ]]
 }
 
+is_device_target() {
+    [[ $BUILD_TARGET == device ]]
+}
+
 parse_bool() {
     if is_true "$1"; then
         echo "on"

@@ -1,6 +1,6 @@
 # esk builder
 
-builds esk kernel packages for plato and generic.
+builds kernel packages for the branch-configured device and generic GKI.
 
 pulls sources and tools, applies optional patches, then builds and packages the kernel.
 
@@ -17,9 +17,11 @@ just build
 for a target-specific build:
 
 ```bash
-just plato
+just device
 just generic
 ```
+
+`device` builds the phone kernel configured for this branch. On `plato`, it builds for plato.
 
 ## structure
 
@@ -28,14 +30,14 @@ just generic
 - build/: setup, source fetching, patching, and kernel compile steps
 - ci/: packaging, metadata, modules, and telegram helpers
 - py/: uv-managed python helper cli
-- modules/: `modules.load` files for plato module packaging
+- modules/: branch-owned `modules.load` files for device packaging
 - kernel_patches/: optional kernel patches
 - .github/workflows/: ci and release workflows
 
 ## build flow
 
 ```text
-just build / just plato / just generic
+just build / just device / just generic
         |
         v
 build.sh
@@ -105,10 +107,10 @@ build with the default target:
 just build
 ```
 
-build plato:
+build the configured device:
 
 ```bash
-just plato
+just device
 ```
 
 build generic:
@@ -120,7 +122,7 @@ just generic
 example:
 
 ```bash
-just plato KSU=true SUSFS=true
+just device KSU=true SUSFS=true LXC=false
 ```
 
 ## checks
@@ -153,12 +155,12 @@ just clean
 
 | env var         | purpose                                      | accepted values                  | default                           |
 | --------------- | -------------------------------------------- | -------------------------------- | --------------------------------- |
-| BUILD_TARGET    | select the build target                      | `plato`, `generic`                | `plato`                            |
+| BUILD_TARGET    | select the build target                      | `device`, `generic`              | `device`                          |
 | KSU             | enable KernelSU setup and config             | boolean                          | `false`                           |
 | SUSFS           | apply SuSFS patches and config               | boolean                          | `false`                           |
 | LXC             | apply the LXC patch                          | boolean                          | `false`                           |
-| STOCK_CONFIG    | apply the stock config patch                 | `auto`, `true`, `false`          | `plato: false`, `generic: true`    |
-| BRANCH_OVERRIDE | override the target kernel branch            | branch name                      | `plato: 16.2-rebase`, `generic: main` |
+| STOCK_CONFIG    | apply the stock config patch                 | `auto`, `true`, `false`          | `device: false`, `generic: true`  |
+| BRANCH_OVERRIDE | override the target kernel branch            | branch name                      | device: `config.sh`, generic: `main` |
 | JOBS            | set the make job count                       | integer                          | `nproc --all`                     |
 | RESET_SOURCES   | reset and re-clone source/tool dirs before build | boolean                      | `false` locally, `true` in ci     |
 | TG_NOTIFY       | send telegram updates                        | boolean                          | `false` locally, `true` in ci     |
@@ -171,11 +173,13 @@ notes:
 
 - boolean values accept `true/false`, `t/f`, `yes/no`, `y/n`, `on/off`, and `1/0`
 - only `STOCK_CONFIG` accepts `auto`; other boolean-like inputs fail clearly
-- `STOCK_CONFIG=auto` resolves to `false` for plato and `true` for generic
+- `STOCK_CONFIG=auto` resolves to `false` for device and `true` for generic
 - `SUSFS` needs `KSU=true`
-- `LXC` not tested on plato!
+- `LXC` only works when enabled by the branch's device configuration
 - `TG_NOTIFY=true` needs `TG_BOT_TOKEN` and `TG_CHAT_ID`
 - `GH_TOKEN` is optional, but helps when fetching latest release assets
+
+the device name, kernel identity, repositories, defconfig overlay, and LXC capability are defined together in the branch-specific device block in `config.sh`.
 
 ## output
 
@@ -190,4 +194,3 @@ notes:
 | build.log                     | build log                               |
 
 where `<package>` has the format `${KERNEL_NAME}-${KERNEL_VERSION}-${VARIANT}` (with `-${KERNEL_COMMIT}` appended when `IS_RELEASE` is not `true`).
-

@@ -34,11 +34,11 @@ on:
     inputs:
       BUILD_TARGET:
         description: "Build target"
-        default: plato
+        default: device
         type: choice
         options:
+          - device
           - generic
-          - plato
 
       BRANCH_OVERRIDE:
         description: "Kernel branch overriding"

@@ -128,7 +128,7 @@ EOF
 }
 
 build_module() {
-    # Only needed for xaga module packaging.
+    # Only needed for device module packaging.
     validate_deps modules
 
     reset_dir "$MOD_FLAT"
