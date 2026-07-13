@@ -57,8 +57,8 @@ validate_env() {
                 error "Cannot use SUSFS without KernelSU"
             fi
 
-            if is_true "$LXC" && [[ $BUILD_TARGET != "xaga" ]]; then
-                error "LXC is not supported for $BUILD_TARGET target"
+            if is_true "$LXC" && { ! is_device_target || ! is_true "$DEVICE_LXC_SUPPORTED"; }; then
+                error "LXC is not supported for $TARGET_NAME"
             fi
             ;;
         *)
@@ -82,7 +82,7 @@ validate_deps() {
             require_cmds patch
             ;;
         modules)
-            # before xaga module packaging
+            # before device module packaging
             require_cmds depmod llvm-strip xz
             ;;
         bootimg)
@@ -107,7 +107,7 @@ main() {
     count setup_toolchain
     count prepare_build
     count build_kernel
-    if [[ "$BUILD_TARGET" == "xaga" ]]; then
+    if is_device_target; then
         count build_module
     fi
 

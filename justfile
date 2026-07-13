@@ -1,9 +1,9 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 alias b := build
+alias d := device
 alias f := fmt
 alias g := generic
-alias x := xaga
 
 default:
     @just --list
@@ -31,8 +31,8 @@ check: fmt-check bash-check lint py-lint py-check
 build *args:
     env {{args}} ./build.sh
 
-xaga *args:
-    env BUILD_TARGET=xaga {{args}} ./build.sh
+device *args:
+    env BUILD_TARGET=device {{args}} ./build.sh
 
 generic *args:
     env BUILD_TARGET=generic {{args}} ./build.sh

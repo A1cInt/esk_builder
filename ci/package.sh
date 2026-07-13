@@ -41,7 +41,7 @@ package_anykernel() {
 }
 
 package_bootimg() {
-    if [[ "$BUILD_TARGET" == "xaga" ]]; then
+    if is_device_target; then
         return
     fi
 
@@ -125,7 +125,7 @@ notify_success() {
 
 🏷️ \#$(escape_md_v2 "$BUILD_TAG") \#$(escape_md_v2 "$additional_tag")
 $(tg_run_line)
-*Target:* $(escape_md_v2 "$BUILD_TARGET")
+*Target:* $(escape_md_v2 "$TARGET_NAME")
 *Time:* $(escape_md_v2 "${minutes}m ${seconds}s")
 *Kernel:* $(escape_md_v2 "$KERNEL_VERSION")
 *Commit:* [$(escape_md_v2 "$KERNEL_COMMIT")]($(escape_md_v2 "$kernel_commit_url"))
@@ -146,7 +146,7 @@ telegram_notify() {
     notify_success "$ak3_package" "$build_time" "anykernel3"
 
     # Boot image
-    if [[ "$BUILD_TARGET" == "xaga" ]]; then
+    if is_device_target; then
         return
     fi
     pushd "$OUT_DIR" > /dev/null

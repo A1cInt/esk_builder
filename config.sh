@@ -6,14 +6,24 @@
 #
 
 ################################################################################
+# Branch-specific device configuration
+################################################################################
+DEVICE_NAME="xaga"
+KERNEL_NAME="ESK"
+KBUILD_BUILD_HOST="esk"
+DEVICE_KERNEL_REPO="github.com:ESK-Project/android_kernel_xiaomi_mt6895@${BRANCH_OVERRIDE:-16.2-rebase}"
+DEVICE_AK3_REPO="github.com:ESK-Project/AnyKernel3@xaga"
+DEVICE_RELEASE_REPO="ESK-Project/esk-releases"
+DEVICE_DEFCONFIG_OVERLAY="vendor/xaga.config"
+DEVICE_LXC_SUPPORTED="true"
+
+################################################################################
 # Project Identity
 ################################################################################
-KERNEL_NAME="ESK"
 KERNEL_DEFCONFIG="gki_defconfig"
 
 # Kbuild identity
 KBUILD_BUILD_USER="builder"
-KBUILD_BUILD_HOST="esk"
 
 # Used for timestamps in logs
 TIMEZONE="Asia/Ho_Chi_Minh"
@@ -24,7 +34,7 @@ RELEASE_BRANCH="main"
 ################################################################################
 # Build target
 ################################################################################
-BUILD_TARGET="${BUILD_TARGET:-xaga}"
+BUILD_TARGET="${BUILD_TARGET:-device}"
 
 ################################################################################
 # Build options
@@ -58,13 +68,15 @@ GKI_URL="https://dl.google.com/android/gki/gki-certified-boot-android12-5.10-202
 LIBFAKESTAT_RELEASE_API="https://api.github.com/repos/cctv18/libfakestat/releases/latest"
 
 case "$BUILD_TARGET" in
-    xaga)
-        KERNEL_REPO="github.com:ESK-Project/android_kernel_xiaomi_mt6895@${BRANCH_OVERRIDE:-16.2-rebase}"
-        AK3_REPO="github.com:ESK-Project/AnyKernel3@xaga"
-        RELEASE_REPO="ESK-Project/esk-releases"
+    device)
+        TARGET_NAME="$DEVICE_NAME"
+        KERNEL_REPO="$DEVICE_KERNEL_REPO"
+        AK3_REPO="$DEVICE_AK3_REPO"
+        RELEASE_REPO="$DEVICE_RELEASE_REPO"
         STOCK_CONFIG_DEFAULT="false"
         ;;
     generic)
+        TARGET_NAME="generic"
         KERNEL_REPO="github.com:ESK-Project/android12-5.10-gki@${BRANCH_OVERRIDE:-main}"
         AK3_REPO="github.com:ESK-Project/AnyKernel3@generic"
         RELEASE_REPO="ESK-Project/gki-releases"

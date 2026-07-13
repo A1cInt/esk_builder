@@ -10,9 +10,9 @@ on:
         description: "Build target"
         type: choice
         required: true
-        default: xaga
+        default: device
         options:
-          - xaga
+          - device
           - generic
       create_release:
         description: "Create release?"
@@ -97,6 +97,8 @@ jobs:
           WORKSPACE="$GITHUB_WORKSPACE"
           source "$WORKSPACE/config.sh"
           source "$WORKSPACE/build/utils.sh"
+          echo "TARGET_NAME=$TARGET_NAME" >> "$GITHUB_ENV"
+          echo "DEVICE_NAME=$DEVICE_NAME" >> "$GITHUB_ENV"
 
           kernel_commit="$(
           python3 - "$metadata_file" "$GITHUB_ENV" <<'PY'
@@ -142,7 +144,7 @@ jobs:
         uses: softprops/action-gh-release@v2.5.0
         with:
           repository: ${{ env.RELEASE_REPO }}
-          name: "${{ env.KERNEL_NAME }} Kernel ${{ github.event.inputs.build_target }} ${{ env.RELEASE_TAG }}"
+          name: "${{ env.KERNEL_NAME }} Kernel ${{ env.TARGET_NAME }} ${{ env.RELEASE_TAG }}"
           tag_name: ${{ env.RELEASE_TAG }}
           token: ${{ secrets.GH_TOKEN }}
           body: |
@@ -168,7 +170,7 @@ jobs:
             | **-VNL** | No KernelSU |
             | **-KSU** | KernelSU |
             | **-SUSFS** | SUSFS Support |
-            | **-LXC** | LXC Support for xaga builds |
+            | **-LXC** | LXC Support for ${{ env.DEVICE_NAME }} builds |
 
             > [!IMPORTANT]
             > For installation instructions and issue reporting guidelines, please refer to the README.md
@@ -192,7 +194,7 @@ jobs:
               cat <<EOF
           📦 *$(escape_md_v2 "$KERNEL_NAME Release Build Completed!")*
 
-          *Target:* $(escape_md_v2 "${{ github.event.inputs.build_target }}")
+          *Target:* $(escape_md_v2 "${{ env.TARGET_NAME }}")
           *Kernel Commit:* [$(escape_md_v2 "${{ env.KERNEL_COMMIT }}")]($(escape_md_v2 "${{ env.KERNEL_COMMIT_URL }}"))
           [GitHub Release]($(escape_md_v2 "https://github.com/${{ env.RELEASE_REPO }}/releases/${{ env.RELEASE_TAG }}"))
           EOF

@@ -34,10 +34,10 @@ on:
     inputs:
       BUILD_TARGET:
         description: "Build target"
-        default: xaga
+        default: device
         type: choice
         options:
-          - xaga
+          - device
           - generic
 
       BRANCH_OVERRIDE:

@@ -71,7 +71,7 @@ send_start_msg() {
 
 🏷️ \#$(escape_md_v2 "$BUILD_TAG")
 $(tg_run_line)
-*Target:* $(escape_md_v2 "$BUILD_TARGET")
+*Target:* $(escape_md_v2 "$TARGET_NAME")
 *Defconfig:* $(escape_md_v2 "$KERNEL_DEFCONFIG")
 *Features:* KSU $(parse_bool "$KSU"), SuSFS $(parse_bool "$SUSFS"), LXC $(parse_bool "$LXC"), Stock config $(parse_bool "$STOCK_CONFIG")
 EOF
