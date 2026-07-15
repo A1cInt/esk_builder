@@ -115,6 +115,7 @@ main() {
 
     # Build flashable package
     count package_anykernel "$PACKAGE_NAME"
+    count package_mountify "$PACKAGE_NAME"
     count package_bootimg "$PACKAGE_NAME"
 
     # Github Actions metadata
