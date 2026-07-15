@@ -28,6 +28,10 @@ on:
         type: boolean
         required: false
         default: false
+      MOUNTIFY:
+        type: boolean
+        required: false
+        default: false
 
 
   workflow_dispatch:
@@ -67,6 +71,11 @@ on:
           - auto
           - true
           - false
+
+      MOUNTIFY:
+        description: "Package Mountify Module?"
+        default: false
+        type: boolean
 
       TG_NOTIFY:
         description: "Telegram Notify"
@@ -141,6 +150,7 @@ jobs:
           STOCK_CONFIG: ${{ inputs.STOCK_CONFIG }}
           TG_NOTIFY: ${{ inputs.TG_NOTIFY }}
           IS_RELEASE: ${{ inputs.IS_RELEASE }}
+          MOUNTIFY: ${{ inputs.MOUNTIFY || true }}
 
         run: |
           just build
