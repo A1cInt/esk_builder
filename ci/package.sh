@@ -40,6 +40,37 @@ package_anykernel() {
     success "AnyKernel3 packaged"
 }
 
+package_mountify() {
+    step "Package Mountify Module with Nuke LKM"
+
+    local package_name="$1"
+    local mountify_dir="$WORKSPACE/mountify_temp"
+    local output_zip="$OUT_DIR/$package_name-Mountify.zip"
+    local compiled_ko="$KERNEL_OUT/fs/nuke/nuke.ko"
+
+    if [[ ! -f "$compiled_ko" ]]; then
+        error "Compiled nuke.ko not found at $compiled_ko! Did the compilation fail?"
+    fi
+
+    info "Cloning mountify4plato template..."
+    rm -rf "$mountify_dir"
+    git clone --depth=1 https://github.com/a1cint/mountify4plato.git "$mountify_dir" > /dev/null 2>&1
+
+    local target_ko="$mountify_dir/module/lkm/nuke-android12-5.10.ko"
+    info "Replacing prebuilt LKM with compiled nuke.ko..."
+    cp -p "$compiled_ko" "$target_ko"
+    llvm-strip --strip-debug "$target_ko"
+
+    info "Creating Mountify Magisk ZIP..."
+    pushd "$mountify_dir/module" > /dev/null
+    rm -f "$output_zip"
+    zip -r9q -T -X -y "$output_zip" ./*
+    popd > /dev/null
+
+    rm -rf "$mountify_dir"
+    success "Mountify module packaged: $(basename "$output_zip")"
+}
+
 package_bootimg() {
     if is_device_target; then
         return
@@ -109,7 +140,7 @@ write_metadata() {
 notify_success() {
     local final_package="$1"
     local build_time="$2"
-    # For indicating package type (boot image, anykernel3)
+    # For indicating package type (boot image, anykernel3, mountify)
     local additional_tag="$3"
 
     local kernel_commit_url
@@ -144,6 +175,12 @@ telegram_notify() {
     # AnyKernel3
     local ak3_package="$OUT_DIR/$package_name-AnyKernel3.zip"
     notify_success "$ak3_package" "$build_time" "anykernel3"
+
+    # Mountify
+    local mountify_package="$OUT_DIR/$package_name-Mountify.zip"
+    if [[ -f "$mountify_package" ]]; then
+        notify_success "$mountify_package" "$build_time" "mountify"
+    fi
 
     # Boot image
     if is_device_target; then
