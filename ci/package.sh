@@ -41,6 +41,11 @@ package_anykernel() {
 }
 
 package_mountify() {
+    if ! is_true "${MOUNTIFY:-true}"; then
+        info "Mountify packaging is disabled, skipping..."
+        return 0
+    fi
+    
     step "Package Mountify Module with Nuke LKM"
 
     local package_name="$1"
