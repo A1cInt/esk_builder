@@ -11,7 +11,7 @@
 DEVICE_NAME="plato"
 KERNEL_NAME="ALC-NEXT"
 KBUILD_BUILD_HOST="alc"
-DEVICE_KERNEL_REPO="github.com:ESK-Project/android_kernel_xiaomi_mt6895@${BRANCH_OVERRIDE:-16.2-rebase}"
+DEVICE_KERNEL_REPO="github.com:A1cInt/alc_android_kernel_xiaomi_mt6895@${BRANCH_OVERRIDE:-16.2-rebase}"
 DEVICE_AK3_REPO="github.com:A1cInt/AnyKernel3@plato"
 DEVICE_RELEASE_REPO="ESK-Project/esk-releases"
 DEVICE_DEFCONFIG_OVERLAY="vendor/plato.config"
