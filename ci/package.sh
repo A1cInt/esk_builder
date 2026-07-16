@@ -57,7 +57,7 @@ package_mountify() {
     fi
 
     rm -rf "$mountify_dir"
-    git clone --depth=1 https://github.com/a1cint/mountify4plato.git "$mountify_dir" > /dev/null 2>&1
+    git clone --depth=1 https://github.com/A1cInt/mountify4plato.git "$mountify_dir" > /dev/null 2>&1
 
     rm -f "$mountify_dir/module/lkm/"*.ko
     rm -f "$mountify_dir/module/lkm/list.txt"
