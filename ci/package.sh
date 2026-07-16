@@ -42,10 +42,9 @@ package_anykernel() {
 
 package_mountify() {
     if ! is_true "${MOUNTIFY:-true}"; then
-        info "Mountify packaging is disabled, skipping..."
         return 0
     fi
-    
+
     step "Package Mountify Module with Nuke LKM"
 
     local package_name="$1"
@@ -54,25 +53,32 @@ package_mountify() {
     local compiled_ko="$KERNEL_OUT/fs/nuke/nuke.ko"
 
     if [[ ! -f "$compiled_ko" ]]; then
-        error "Compiled nuke.ko not found at $compiled_ko! Did the compilation fail?"
+        error "Compiled nuke.ko not found at $compiled_ko"
     fi
 
-    info "Cloning mountify4plato template..."
     rm -rf "$mountify_dir"
     git clone --depth=1 https://github.com/a1cint/mountify4plato.git "$mountify_dir" > /dev/null 2>&1
 
-    local target_ko="$mountify_dir/module/lkm/nuke-android12-5.10.ko"
-    info "Replacing prebuilt LKM with compiled nuke.ko..."
+    rm -f "$mountify_dir/module/lkm/"*.ko
+    rm -f "$mountify_dir/module/lkm/list.txt"
+
+    local target_ko_name="nuke-android12-5.10.ko"
+    local target_ko="$mountify_dir/module/lkm/$target_ko_name"
+    
     cp -p "$compiled_ko" "$target_ko"
     llvm-strip --strip-debug "$target_ko"
 
-    info "Creating Mountify Magisk ZIP..."
+    pushd "$mountify_dir/module/lkm" > /dev/null
+    sha256sum "$target_ko_name" > list.txt
+    popd > /dev/null
+
     pushd "$mountify_dir/module" > /dev/null
     rm -f "$output_zip"
     zip -r9q -T -X -y "$output_zip" ./*
     popd > /dev/null
 
     rm -rf "$mountify_dir"
+
     success "Mountify module packaged: $(basename "$output_zip")"
 }
 
